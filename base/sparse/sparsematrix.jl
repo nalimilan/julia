@@ -328,8 +328,15 @@ end
 
 function sprand(m::Integer, n::Integer, density::FloatingPoint, rng::Function, v)
     numnz = int(m*n*density)
-    I = rand!(1:m, Array(Int, numnz))
-    J = rand!(1:n, Array(Int, numnz))
+    local I
+    local J
+    if density > 0.1
+        K = randperm(m*n)
+        I, J = ind2sub((m,n), K[1:numnz])
+    else
+        I = rand!(1:m, Array(Int, numnz))
+        J = rand!(1:n, Array(Int, numnz))
+    end
     S = sparse(I, J, v, m, n)
     if !iseltype(v,Bool)
         S.nzval = rng(nnz(S))
