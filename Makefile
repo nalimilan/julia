@@ -16,15 +16,15 @@ all: default
 default: release
 
 DIRS = $(BUILD)/bin $(BUILD)/etc/julia $(BUILD)/lib $(BUILD)/libexec $(BUILD)/share/julia $(BUILD)/share/julia/man/man1
-ifneq ($(JL_LIBDIR),bin)
-ifneq ($(JL_LIBDIR),lib)
-DIRS += $(BUILD)/$(JL_LIBDIR)
+ifneq ($(JL_LIBDIR), $(BUILD)/bin)
+ifneq ($(JL_LIBDIR), $(BUILD)/lib)
+DIRS += $(JL_LIBDIR)
 endif
 endif
-ifneq ($(JL_PRIVATE_LIBDIR),bin)
-ifneq ($(JL_PRIVATE_LIBDIR),lib)
-ifneq ($(JL_PRIVATE_LIBDIR),$(JL_LIBDIR))
-DIRS += $(BUILD)/$(JL_PRIVATE_LIBDIR)
+ifneq ($(JL_PRIVATE_LIBDIR), $(BUILD)/bin)
+ifneq ($(JL_PRIVATE_LIBDIR), $(BUILD)/lib)
+ifneq ($(JL_PRIVATE_LIBDIR), $(JL_LIBDIR))
+DIRS += $(JL_PRIVATE_LIBDIR)
 endif
 endif
 endif
@@ -194,7 +194,7 @@ endif
 	done
 ifeq ($(USE_SYSTEM_LIBUV),0)
 ifeq ($(OS),WINNT)
-	$(INSTALL_F) $(BUILD)/lib/libuv.a $(DESTDIR)$(PREFIX)/$(JL_PRIVATE_LIBDIR)
+	$(INSTALL_F) $(BUILD)/lib/libuv.a $(DESTDIR)/$(JL_PRIVATE_LIBDIR)
 	$(INSTALL_F) $(BUILD)/include/tree.h $(DESTDIR)$(PREFIX)/include/julia
 else
 	$(INSTALL_F) $(BUILD)/$(JL_LIBDIR)/libuv.a $(DESTDIR)$(PREFIX)/$(JL_PRIVATE_LIBDIR)
@@ -203,8 +203,8 @@ endif
 endif
 	$(INSTALL_F) src/julia.h src/support/*.h $(DESTDIR)$(PREFIX)/include/julia
 	# Copy system image
-	$(INSTALL_F) $(BUILD)/$(JL_PRIVATE_LIBDIR)/sys.ji $(DESTDIR)$(PREFIX)/$(JL_PRIVATE_LIBDIR)
-	$(INSTALL_F) $(BUILD)/$(JL_PRIVATE_LIBDIR)/sys.$(SHLIB_EXT) $(DESTDIR)$(PREFIX)/$(JL_PRIVATE_LIBDIR)
+	$(INSTALL_F) $(BUILD)/$(JL_PRIVATE_LIBDIR)/sys.ji $(DESTDIR)$(JL_PRIVATE_LIBDIR)
+	$(INSTALL_F) $(BUILD)/$(JL_PRIVATE_LIBDIR)/sys.$(SHLIB_EXT) $(DESTDIR)$(JL_PRIVATE_LIBDIR)
 	# Copy in all .jl sources as well
 	cp -R -L $(BUILD)/share/julia $(DESTDIR)$(PREFIX)/share/
 ifeq ($(OS), WINNT)
@@ -235,7 +235,7 @@ endif
 	@$(MAKE) install
 	cp LICENSE.md julia-$(JULIA_COMMIT)
 ifeq ($(OS), Darwin)
-	-./contrib/mac/fixup-libgfortran.sh $(DESTDIR)$(PREFIX)/$(JL_PRIVATE_LIBDIR)
+	-./contrib/mac/fixup-libgfortran.sh $(DESTDIR)$(JL_PRIVATE_LIBDIR)
 endif
 	# Copy in juliarc.jl files per-platform for binary distributions as well
 	# Note that we don't install to SYSCONFDIR: we always install to $(DESTDIR)$(PREFIX)/etc.

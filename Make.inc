@@ -66,7 +66,7 @@ BUILD_LLDB = 0
 BUILD = $(JULIAHOME)/usr
 
 # Directories where said libraries get installed to
-LIBDIR = lib
+LIBDIR = $(BUILD)/lib
 JL_LIBDIR = $(LIBDIR)
 JL_PRIVATE_LIBDIR = $(JL_LIBDIR)/julia
 
