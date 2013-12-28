@@ -14,14 +14,14 @@ FLAGS = \
 	-Wall -Wno-strict-aliasing -fno-omit-frame-pointer \
 	-Iflisp -Isupport -fvisibility=hidden -fno-common \
 	-I$(call exec,$(LLVM_CONFIG) --includedir) \
-	-I$(LIBUV_INC) -I$(JULIAHOME)/usr/include -DLIBRARY_EXPORTS
+	-I$(LIBUV_INC) -I$(BUILD)/include -DLIBRARY_EXPORTS
 
 LLVMLINK = $(call exec,$(LLVM_CONFIG) --libs)
 ifeq ($(USE_LLVM_SHLIB),1)
 LLVMLINK = -lLLVM-$(LLVM_VER)
 endif
 
-LIBS = $(WHOLE_ARCHIVE) $(JULIAHOME)/src/flisp/libflisp.a $(WHOLE_ARCHIVE) $(JULIAHOME)/src/support/libsupport.a -L$(BUILD)/lib $(LIBUV) $(NO_WHOLE_ARCHIVE) $(call exec,$(LLVM_CONFIG) --ldflags) $(LLVMLINK) $(OSLIBS)
+LIBS = $(WHOLE_ARCHIVE) $(JULIAHOME)/src/flisp/libflisp.a $(WHOLE_ARCHIVE) $(JULIAHOME)/src/support/libsupport.a -L$(BUILD)/$(JL_LIBDIR) $(LIBUV) $(NO_WHOLE_ARCHIVE) $(call exec,$(LLVM_CONFIG) --ldflags) $(LLVMLINK) $(OSLIBS)
 
 ifneq ($(MAKECMDGOALS),debug)
 TARGET =

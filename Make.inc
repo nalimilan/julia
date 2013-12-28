@@ -63,7 +63,7 @@ BUILD_LLVM_CLANG = 0
 # see http://lldb.llvm.org/build.html for dependancies
 BUILD_LLDB = 0
 
-BUILD = $(JULIAHOME)/usr
+BUILD = $(JULIAHOME)/build
 
 # Directories where said libraries get installed to
 LIBDIR = lib
