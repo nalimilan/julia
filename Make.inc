@@ -66,9 +66,11 @@ BUILD_LLDB = 0
 BUILD = $(JULIAHOME)/build
 
 # Directories where said libraries get installed to
-LIBDIR = lib
+LIBDIR = usr/lib
 JL_LIBDIR = $(LIBDIR)
 JL_PRIVATE_LIBDIR = $(JL_LIBDIR)/julia
+
+SYSCONFDIR = etc
 
 # This used for debian packaging, to conform to library layout guidelines
 ifeq ($(MULTIARCH_INSTALL), 1)
