@@ -12,6 +12,10 @@ CONFIGURE_COMMON += LDFLAGS=-Wl,--stack,8388608
 endif
 CONFIGURE_COMMON += F77="$(FC)" CC="$(CC)" CXX="$(CXX)"
 
+# If the top-level Makefile is called with environment variables,
+# they will override the values passed above to ./configure
+MAKE_COMMON = prefix=$(BUILD)$(prefix) bindir=$(BUILD)$(bindir) libdir=$(BUILD)$(libdir) libexecdir=$(BUILD)$(libexecdir) datarootdir=$(BUILD)$(datarootdir) includedir=$(BUILD)$(includedir) sysconfdir=$(BUILD)$(sysconfdir)
+
 #autoconf configure-driven scripts: llvm readline pcre arpack fftw unwind gmp mpfr patchelf uv
 #custom Makefile rules: openlibm Rmath double-conversion random suitesparse-wrapper suitesparse lapack openblas
 
@@ -381,7 +385,7 @@ endif
 
 $(LLVM_OBJ_TARGET): $(LLVM_OBJ_SOURCE) | $(llvm_python_workaround)
 	export PATH=$(abspath llvm-$(LLVM_VER)/python2_path):$$PATH && \
-	$(MAKE) -C llvm-$(LLVM_VER)/build_$(LLVM_BUILDTYPE) install
+	$(MAKE) -C llvm-$(LLVM_VER)/build_$(LLVM_BUILDTYPE) install $(MAKE_COMMON)
 	touch -c $@
 
 clean-llvm:
@@ -415,7 +419,7 @@ readline-$(READLINE_VER)/configure: readline-$(READLINE_VER).tar.gz
 	tar -C readline-$(READLINE_VER) --strip-components 1 -xf $<
 	touch -c $@
 $(READLINE_OBJ_TARGET): $(READLINE_OBJ_SOURCE) readline-$(READLINE_VER)/checked
-	$(MAKE) -C readline-$(READLINE_VER) $(READLINE_CFLAGS) install
+	$(MAKE) -C readline-$(READLINE_VER) $(READLINE_CFLAGS) install $(MAKE_COMMON)
 	touch -c $@
 else
 READLINE_OBJ_TARGET = $(BUILD)$(libdir)/libreadline.$(SHLIB_EXT)
@@ -442,7 +446,7 @@ readline-$(READLINE_VER)/configure: readline-$(READLINE_VER).tar.gz
 	cd readline-$(READLINE_VER) && patch -p0 < ../readline62-004
 	touch -c $@
 $(READLINE_OBJ_TARGET): $(READLINE_OBJ_SOURCE) readline-$(READLINE_VER)/checked
-	$(MAKE) -C readline-$(READLINE_VER) install
+	$(MAKE) -C readline-$(READLINE_VER) install $(MAKE_COMMON)
 ifeq ($(OS),WINNT)
 	chmod +w $(BUILD)$(libdir)/libreadline.* $(BUILD)$(libdir)/libhistory.*
 else
@@ -516,7 +520,7 @@ ifeq ($(OS),$(BUILD_OS))
 endif
 	echo 1 > $@
 $(UV_OBJ_TARGET): $(UV_SRC_TARGET)
-	$(MAKE) -C libuv install
+	$(MAKE) -C libuv install $(MAKE_COMMON)
 	$(INSTALL_NAME_CMD)libuv.dylib $(BUILD)$(libdir)/libuv.dylib
 
 clean-uv:
@@ -555,7 +559,7 @@ ifeq ($(OS),$(BUILD_OS))
 endif
 	echo 1 > $@
 $(PCRE_OBJ_TARGET): $(PCRE_SRC_TARGET) pcre-$(PCRE_VER)/checked
-	$(MAKE) -C pcre-$(PCRE_VER) $(LIBTOOL_CCLD) install
+	$(MAKE) -C pcre-$(PCRE_VER) $(LIBTOOL_CCLD) install $(MAKE_COMMON)
 	$(INSTALL_NAME_CMD)libpcre.dylib $@
 	touch -c $@
 
@@ -1060,7 +1064,7 @@ arpack-ng-$(ARPACK_VER)/checked: $(ARPACK_OBJ_SOURCE)
 	echo 1 > $@
 $(ARPACK_OBJ_TARGET): $(ARPACK_OBJ_SOURCE) arpack-ng-$(ARPACK_VER)/checked | $(BUILD)$(libdir)
 	cd arpack-ng-$(ARPACK_VER) && \
-	$(MAKE) install $(ARPACK_MFLAGS)
+	$(MAKE) install $(ARPACK_MFLAGS) $(MAKE_COMMON)
 ifeq ($(OS), WINNT)
 	mv $(BUILD)$(bindir)/libarpack-2.dll $@
 endif
@@ -1132,7 +1136,7 @@ ifeq ($(OS),$(BUILD_OS))
 endif
 	echo 1 > $@
 $(FFTW_SINGLE_OBJ_TARGET): $(FFTW_SINGLE_SRC_TARGET) fftw-$(FFTW_VER)-single/checked
-	$(MAKE) -C fftw-$(FFTW_VER)-single install
+	$(MAKE) -C fftw-$(FFTW_VER)-single install $(MAKE_COMMON)
 	touch -c $@
 ifeq ($(OS), Darwin)
 	$(INSTALL_NAME_CMD)libfftw3f.dylib $(BUILD)$(libdir)/libfftw3f.dylib
@@ -1170,7 +1174,7 @@ ifeq ($(OS),$(BUILD_OS))
 endif
 	echo 1 > $@
 $(FFTW_DOUBLE_OBJ_TARGET): $(FFTW_DOUBLE_SRC_TARGET) fftw-$(FFTW_VER)-double/checked
-	$(MAKE) -C fftw-$(FFTW_VER)-double install
+	$(MAKE) -C fftw-$(FFTW_VER)-double install $(MAKE_COMMON)
 ifeq ($(OS), Darwin)
 	$(INSTALL_NAME_CMD)libfftw3.$(SHLIB_EXT) $(BUILD)$(libdir)/libfftw3.$(SHLIB_EXT)
 	$(INSTALL_NAME_CMD)libfftw3_threads.$(SHLIB_EXT) $(BUILD)$(libdir)/libfftw3_threads.$(SHLIB_EXT)
@@ -1344,7 +1348,7 @@ endif
 	echo 1 > $@
 #todo: libunwind tests known to fail
 $(LIBUNWIND_TARGET_OBJ): $(LIBUNWIND_TARGET_SOURCE)
-	$(MAKE) install -C libunwind-$(UNWIND_VER)
+	$(MAKE) install -C libunwind-$(UNWIND_VER) $(MAKE_COMMON)
 ifeq ($(ARCH), ppc64)
 	# workaround for configure script bug
 	mv $(BUILD)/lib64/libunwind*.a $(BUILD)$(libdir)
@@ -1418,7 +1422,7 @@ ifeq ($(OS),$(BUILD_OS))
 endif
 	echo 1 > $@
 $(GMP_OBJ_TARGET): $(GMP_SRC_TARGET) gmp-$(GMP_VER)/checked
-	$(MAKE) -C gmp-$(GMP_VER) $(LIBTOOL_CCLD) install
+	$(MAKE) -C gmp-$(GMP_VER) $(LIBTOOL_CCLD) install $(MAKE_COMMON)
 ifeq ($(OS),WINNT)
 	mv -f $(BUILD)$(libdir)/libgmp.lib $(BUILD)$(libdir)/libgmp.lib
 	mv -f $(BUILD)$(libdir)/libgmp.dll $@
@@ -1467,7 +1471,7 @@ ifeq ($(OS),$(BUILD_OS))
 endif
 	echo 1 > $@
 $(MPFR_OBJ_TARGET): $(MPFR_SRC_TARGET) mpfr-$(MPFR_VER)/checked
-	$(MAKE) -C mpfr-$(MPFR_VER) $(LIBTOOL_CCLD) install
+	$(MAKE) -C mpfr-$(MPFR_VER) $(LIBTOOL_CCLD) install $(MAKE_COMMON)
 	$(INSTALL_NAME_CMD)libmpfr.dylib $@
 	touch -c $@
 
@@ -1513,7 +1517,7 @@ else
 endif
 	echo 1 > $@
 $(ZLIB_SRC_TARGET): zlib-$(ZLIB_VER)/config.status
-	$(MAKE) -C zlib-$(ZLIB_VER) PREFIX=$(CROSS_COMPILE)
+	$(MAKE) -C zlib-$(ZLIB_VER)
 	touch -c $@
 zlib-$(ZLIB_VER)/checked: $(ZLIB_SRC_TARGET)
 ifneq ($(OS), WINNT)
@@ -1524,7 +1528,7 @@ $(ZLIB_OBJ_TARGET): $(ZLIB_SRC_TARGET) zlib-$(ZLIB_VER)/checked
 ifeq ($(OS), WINNT)
 	cp zlib-$(ZLIB_VER)/zlib1.dll $@
 else
-	$(MAKE) -C zlib-$(ZLIB_VER) install PREFIX=$(CROSS_COMPILE)
+	$(MAKE) -C zlib-$(ZLIB_VER) install PREFIX=$(CROSS_COMPILE) $(MAKE_COMMON)
 endif
 	$(INSTALL_NAME_CMD)libz.dylib $@
 	touch -c $@
@@ -1569,7 +1573,7 @@ ifeq ($(OS),$(BUILD_OS))
 endif
 	echo 1 > $@
 $(PATCHELF_TARGET): $(PATCHELF_SOURCE) patchelf-$(PATCHELF_VER)/checked
-	$(MAKE) -C patchelf-$(PATCHELF_VER) install
+	$(MAKE) -C patchelf-$(PATCHELF_VER) install $(MAKE_COMMON)
 	touch -c $@
 
 clean-patchelf:
@@ -1604,7 +1608,7 @@ $(GIT_SOURCE): git-$(GIT_VER)/config.status
 git-$(GIT_VER)/checked: $(GIT_SOURCE)
 	echo 1 > $@
 $(GIT_TARGET): $(GIT_SOURCE) git-$(GIT_VER)/checked
-	$(MAKE) -C git-$(GIT_VER) install NO_INSTALL_HARDLINKS=1
+	$(MAKE) -C git-$(GIT_VER) install NO_INSTALL_HARDLINKS=1 $(MAKE_COMMON)
 	touch -c $@
 
 clean-git:
