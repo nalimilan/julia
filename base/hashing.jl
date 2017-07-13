@@ -70,12 +70,12 @@ function hash_range(r::Range, h::UInt)
     h += hash(size(r))
 
     length(r) == 0 && return h
-
     h = hash(first(r), h)
     length(r) == 1 && return h
-    length(r) == 2 && return hash(step(r), h)
 
-    h += hashrle_seed
-    h = hash(length(r)-1, h)
-    hash(step(r), h)
+    if length(r) > 2
+        h += hashr_seed
+        h = hash(step(r), h)
+    end
+    h = hash(last(r), h)
 end
