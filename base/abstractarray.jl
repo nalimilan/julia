@@ -2006,11 +2006,10 @@ function hash(a::AbstractArray{T}, h::UInt) where T
     h += hashaa_seed
     h += hash(size(a))
 
-    length(a) == 0 && return h
-    x2, state = next(a, start(a))
-    h = hash(x2, h)
-    length(a) == 1 && return h
-    length(a) == 2 && return hash(next(a, state)[1], h)
+    state = start(a)
+    done(a, state) && return h
+    x2, state = next(a, state)
+    done(a, state) && return hash(x2, h)
 
     # Check whether the array is equal to a range, and hash the elements
     # at the beginning of the array as such as long as they match this assumption
@@ -2028,7 +2027,7 @@ function hash(a::AbstractArray{T}, h::UInt) where T
         catch
             @goto nonrange
         end
-        iszero(step) && @goto nonrange
+        iszero(s) && @goto nonrange
         r = x2:s:last(a)
         rstate = start(r)
         y, rstate = next(r, rstate)

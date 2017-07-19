@@ -83,6 +83,7 @@ vals = Any[
 ]
 
 for a in vals, b in vals
+@show a, b
     @test isequal(a,b) == (hash(a)==hash(b))
 end
 
