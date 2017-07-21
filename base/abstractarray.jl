@@ -2016,32 +2016,36 @@ function hash(a::AbstractArray{T}, h::UInt) where T
     # This needs to be done even for non-RangeStepRegular types since they may still be equal
     # to RangeStepRegular values (e.g. 1.0:3.0 == 1:3)
     if isa(a, AbstractVector) && (!isleaftype(T) || method_exists(-, Tuple{T, T}))
-        # Compute a range with the same endpoints and length as a
-        x1, _ = next(a, state)
+        first = x2
+        x2, _ = next(a, state)
+        if length(a) == 2
+            h = hash(first, h)
+            return hash(x2, h)
+        end
+
         # Try to compute the step between two subsequent elements.
         # If this fails (e.g. overflow for a checked arithmetic type),
         # a cannot be equal to a range
-        local s
+        local step
         try
-            s = x1 - x2
+            step = x2 - first
         catch
             @goto nonrange
         end
-        iszero(s) && @goto nonrange
-        r = x2:s:last(a)
-        rstate = start(r)
-        y, rstate = next(r, rstate)
+        iszero(step) && @goto nonrange
+        y = first
         firststate = state
-        while !done(a, state) && !done(r, rstate)
-            isequal(x2, y) || break
+        while !done(a, state)
             x2, state = next(a, state)
-            y, rstate = next(r, rstate)
+            y += step
+            isequal(x2, y) || break
         end
-        if state != firststate # At least one element matched range: hash that range
+        if state != firststate # At least one element matched range: hash that range TODO: needed?
+            h = hash(first, h)
             h += hashr_seed
-            h = hash(s, h)
+            h = hash(step, h)
+            h = hash(x2, h)
         end
-        h = hash(x2, h)
     end
 
     @label nonrange

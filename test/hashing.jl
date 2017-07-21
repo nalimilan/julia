@@ -83,22 +83,24 @@ vals = Any[
 ]
 
 for a in vals, b in vals
-@show a, b
     @test isequal(a,b) == (hash(a)==hash(b))
 end
 
 vals = Any[
     Int[], Float64[],
     [0], [1], [2],
-    # test various sparsity patterns with repetitions of steps
+    # test vectors starting with ranges or not
+    [1, 2], [1, 2, 3], [1, 2, 3, 4], [1, 2, 3, 4, 5],
+    [2, 1], [3, 2, 1], [4, 3, 2, 1], [5, 4, 3, 2, 1],
+    # test vectors including ranges
+    [2, 1, 2, 3], [2, 3, 2, 1], [2, 1, 2, 3, 2], [2, 3, 2, 1, 2],
+    # test various sparsity patterns
     [0, 0], [0, 0, 0], [0, 1], [1, 0],
     [0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 1, 2],
     [0 0; 0 0], [1 0; 0 0], [0 1; 0 0], [0 0; 1 0], [0 0; 0 1],
     [5 1; 0 0], [1 1; 0 1], [0 2; 3 0], [0 2; 4 6], [4 0; 0 1],
     [0 0 0; 0 0 0], [1 0 0; 0 0 1], [0 0 2; 3 0 0], [0 0 7; 6 1 2],
     [4 0 0; 3 0 1], [0 2 4; 6 0 0],
-    # run of equal steps that crosses a zero
-    [0 3 2 1 0 -1], [0 1 0 -1 0],
     # various stored zeros patterns
     sparse([1], [1], [0]), sparse([1], [1], [-0.0]),
     sparse([1, 2], [1, 1], [-0.0, 0.0]), sparse([1, 2], [1, 1], [0.0, -0.0]),
