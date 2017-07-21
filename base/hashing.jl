@@ -72,10 +72,9 @@ function hash_range(r::Range, h::UInt)
     length(r) == 0 && return h
     h = hash(first(r), h)
     length(r) == 1 && return h
+    length(r) == 2 && return hash(last(r), h)
 
-    if length(r) > 2
-        h += hashr_seed
-        h = hash(step(r), h)
-    end
+    h += hashr_seed
+    h = hash(step(r), h)
     h = hash(last(r), h)
 end

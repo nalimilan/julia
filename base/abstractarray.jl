@@ -2032,7 +2032,7 @@ function hash(a::AbstractArray{T}, h::UInt) where T
         rstate = start(r)
         y, rstate = next(r, rstate)
         firststate = state
-        while !done(a, state) && !done(r, state)
+        while !done(a, state) && !done(r, rstate)
             isequal(x2, y) || break
             x2, state = next(a, state)
             y, rstate = next(r, rstate)
