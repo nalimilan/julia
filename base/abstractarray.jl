@@ -1997,6 +1997,22 @@ const hashaa_seed = UInt === UInt64 ? 0x7f53e68ceb575e76 : 0xeb575e76
 const hashrle_seed = UInt === UInt64 ? 0x2aab8909bfea414c : 0xbfea414c
 const hashr_seed   = UInt === UInt64 ? 0x80707b6821b70087 : 0x21b70087
 
+# Efficient O(1) method equivalent to the O(N) AbstractArray fallback,
+# which works only for ranges with regular step (RangeStepRegular)
+function hash_range(r::Range, h::UInt)
+    h += hashaa_seed
+    h += hash(size(r))
+
+    length(r) == 0 && return h
+    h = hash(first(r), h)
+    length(r) == 1 && return h
+    length(r) == 2 && return hash(last(r), h)
+
+    h += hashr_seed
+    h = hash(step(r), h)
+    h = hash(last(r), h)
+end
+
 function hash(a::AbstractArray{T}, h::UInt) where T
     # O(1) hashing for types with regular step
     if isa(a, Range) && isa(TypeRangeStep(a), RangeStepRegular)
@@ -2017,30 +2033,36 @@ function hash(a::AbstractArray{T}, h::UInt) where T
     # to RangeStepRegular values (e.g. 1.0:3.0 == 1:3)
     if isa(a, AbstractVector) && (!isleaftype(T) || method_exists(-, Tuple{T, T}))
         first = x2
-        x2, _ = next(a, state)
+        firststate = state
+        x2, state = next(a, state)
         if length(a) == 2
             h = hash(first, h)
             return hash(x2, h)
         end
 
         # Try to compute the step between two subsequent elements.
-        # If this fails (e.g. overflow for a checked arithmetic type),
-        # a cannot be equal to a range
+        # If this fails (e.g. type does not support subtraction, or overflow error
+        # for a checked arithmetic type), a cannot be equal to the corresponding range
         local step
         try
             step = x2 - first
-        catch
+        catch err
+            isa(err, OverflowError) || isa(err, MethodError) || rethrow(err)
             @goto nonrange
         end
         iszero(step) && @goto nonrange
-        y = first
-        firststate = state
+        y = x2
         while !done(a, state)
             x2, state = next(a, state)
-            y += step
+            try
+                y += step
+            catch err
+                isa(err, OverflowError) || rethrow(err)
+                break
+            end
             isequal(x2, y) || break
         end
-        if state != firststate # At least one element matched range: hash that range TODO: needed?
+        if state != firststate # At least one element matched range: hash that range
             h = hash(first, h)
             h += hashr_seed
             h = hash(step, h)
