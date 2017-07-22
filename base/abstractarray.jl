@@ -2033,40 +2033,45 @@ function hash(a::AbstractArray{T}, h::UInt) where T
     # to RangeStepRegular values (e.g. 1.0:3.0 == 1:3)
     if isa(a, AbstractVector) && (!isleaftype(T) || method_exists(-, Tuple{T, T}))
         first = x2
-        firststate = state
         x2, state = next(a, state)
         if length(a) == 2
             h = hash(first, h)
             return hash(x2, h)
         end
+        secondstate = state
 
         # Try to compute the step between two subsequent elements.
         # If this fails (e.g. type does not support subtraction, or overflow error
-        # for a checked arithmetic type), a cannot be equal to the corresponding range
+        # for a checked arithmetic type), a cannot be equal to a range.
+        # promote() ensures no overflow can happen for heterogeneous arrays
+        # which are equal to a range
         local step
         try
-            step = x2 - first
+            x2p, firstp = promote(x2, first)
+            step = x2p - firstp
         catch err
             isa(err, OverflowError) || isa(err, MethodError) || rethrow(err)
             @goto nonrange
         end
         iszero(step) && @goto nonrange
-        y = x2
-        while !done(a, state)
+        r = first:step:last(a)
+        @show r
+        state = start(a)
+        rstate = start(r)
+        while !done(a, state) && !done(r, rstate)
             x2, state = next(a, state)
-            try
-                y += step
-            catch err
-                isa(err, OverflowError) || rethrow(err)
-                break
-            end
+            y, rstate = next(r, rstate)
+                        @show x2, y
             isequal(x2, y) || break
         end
-        if state != firststate # At least one element matched range: hash that range
+        # If at least one element in addition to the first one matched range,
+        # hash these elements as a range; else, leave them to the fallback below
+        if state != secondstate
             h = hash(first, h)
             h += hashr_seed
             h = hash(step, h)
             h = hash(x2, h)
+            @show first, step, x2
         end
     end
 
