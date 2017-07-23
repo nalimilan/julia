@@ -2034,6 +2034,7 @@ function hash(a::AbstractArray{T}, h::UInt) where T
     if isa(a, AbstractVector) && (!isleaftype(T) || method_exists(-, Tuple{T, T}))
         first = x2
         x2, state = next(a, state)
+        second = x2
         if length(a) == 2
             h = hash(first, h)
             return hash(x2, h)
@@ -2045,6 +2046,8 @@ function hash(a::AbstractArray{T}, h::UInt) where T
         # for a checked arithmetic type), a cannot be equal to a range.
         # promote() ensures no overflow can happen for heterogeneous arrays
         # which are equal to a range
+        @label first
+        S = typeof(first)
         local step
         try
             x2p, firstp = promote(x2, first)
@@ -2061,8 +2064,29 @@ function hash(a::AbstractArray{T}, h::UInt) where T
         while !done(a, state) && !done(r, rstate)
             x2, state = next(a, state)
             y, rstate = next(r, rstate)
-                        @show x2, y
+            # When encountering an element with a wider type than previous ones, restart
+            # from first element using the widest type to avoid overflow
+            U = promote_type(typeof(x2), S)
+            if U !== S
+                first = convert(U, first)
+                state = secondstate
+                x2 = second
+                @goto first
+            end
+            @show x2, y
             isequal(x2, y) || break
+        end
+        # If overflow happened when computing step, loop can have failed to detect
+        # that next element was in a range if type changes
+        if !done(a, state)
+            x2, _ = next(a, state)
+            U = promote_type(typeof(x2), S)
+            if U !== S
+                first = convert(U, first)
+                state = secondstate
+                x2 = second
+                @goto first
+            end
         end
         # If at least one element in addition to the first one matched range,
         # hash these elements as a range; else, leave them to the fallback below
