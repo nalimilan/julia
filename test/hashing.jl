@@ -95,6 +95,7 @@ vals = Any[
     [2, 1], [3, 2, 1], [4, 3, 2, 1], [5, 4, 3, 2, 1], [5, 4, 3, 2, 1, 0, -1],
     # test vectors starting with ranges which trigger overflow with Int8
     [124, 125, 126, 127], [124, 125, 126, 127, -128], [-128, 127, -128],
+    [2^53, 2^53+1, 2^53+2], Float64[2^53, 2^53+1, 2^53+2],
     # test vectors including ranges
     [2, 1, 2, 3], [2, 3, 2, 1], [2, 1, 2, 3, 2], [2, 3, 2, 1, 2],
     # test various sparsity patterns

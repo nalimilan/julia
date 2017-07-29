@@ -2032,7 +2032,8 @@ function hash(a::AbstractArray{T}, h::UInt) where T
     # This needs to be done even for non-RangeStepRegular types since they may still be equal
     # to RangeStepRegular values (e.g. 1.0:3.0 == 1:3)
     if isa(a, AbstractVector) && (!isleaftype(T) || method_exists(-, Tuple{T, T}))
-        first = x2
+        firstval = x2
+        lastval = last(a)
         x2, state = next(a, state)
         second = x2
         if length(a) == 2
@@ -2046,11 +2047,9 @@ function hash(a::AbstractArray{T}, h::UInt) where T
         # for a checked arithmetic type), a cannot be equal to a range.
         # promote() ensures no overflow can happen for heterogeneous arrays
         # which are equal to a range
-        @label first
-        S = typeof(first)
         local step
+        firstp, lastp = promote(firstval, lastval)
         try
-            x2p, firstp = promote(x2, first)
             step = x2p - firstp
         catch err
             isa(err, OverflowError) || isa(err, MethodError) || rethrow(err)
