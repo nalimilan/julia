@@ -96,7 +96,7 @@ function firstcaller(bt::Array{Ptr{Void},1}, funcsyms)
             found = lkup.func in funcsyms
             # look for constructor type name
             if !found && !isnull(lkup.linfo)
-                li = get(lkup.linfo)
+                li = unwrap(lkup.linfo)
                 ft = ccall(:jl_first_argument_datatype, Any, (Any,), li.def.sig)
                 if isa(ft,DataType) && ft.name === Type.body.name
                     ft = unwrap_unionall(ft.parameters[1])
@@ -1780,20 +1780,20 @@ import .Iterators.enumerate
 
 # PR #23640
 # when this deprecation is deleted, remove all calls to it, and replace all keywords of:
-# `payload::Union{CredentialPayload,Nullable{<:AbstractCredentials}}` with
+# `payload::Union{CredentialPayload,Option{<:AbstractCredentials}}` with
 # `payload::CredentialPayload` from base/libgit2/libgit2.jl
 @eval LibGit2 function deprecate_nullable_creds(f, sig, payload)
-    if isa(payload, Nullable{<:AbstractCredentials})
+    if isa(payload, Option{<:AbstractCredentials})
         # Note: Be careful not to show the contents of the credentials as it could reveal a
         # password.
         if isnull(payload)
-            msg = "LibGit2.$f($sig; payload=Nullable()) is deprecated, use "
+            msg = "LibGit2.$f($sig; payload=null) is deprecated, use "
             msg *= "LibGit2.$f($sig; payload=LibGit2.CredentialPayload()) instead."
             p = CredentialPayload()
         else
-            cred = unsafe_get(payload)
+            cred = unwrap(payload)
             C = typeof(cred)
-            msg = "LibGit2.$f($sig; payload=Nullable($C(...))) is deprecated, use "
+            msg = "LibGit2.$f($sig; payload=Some($C(...))) is deprecated, use "
             msg *= "LibGit2.$f($sig; payload=LibGit2.CredentialPayload($C(...))) instead."
             p = CredentialPayload(cred)
         end
@@ -1809,6 +1809,9 @@ end
 # PR #23690
 # `SSHCredentials` and `UserPasswordCredentials` constructors using `prompt_if_incorrect`
 # are deprecated in base/libgit2/types.jl.
+
+@deprecate_moved Nullable "Nullables"
+@deprecate_moved unsafe_get "Nullables"
 
 # END 0.7 deprecations
 

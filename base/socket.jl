@@ -262,7 +262,7 @@ mutable struct TCPSocket <: LibuvStream
     readnotify::Condition
     connectnotify::Condition
     closenotify::Condition
-    sendbuf::Nullable{IOBuffer}
+    sendbuf::Option{IOBuffer}
     lock::ReentrantLock
     throttle::Int
 
@@ -274,7 +274,7 @@ mutable struct TCPSocket <: LibuvStream
                 Condition(),
                 Condition(),
                 Condition(),
-                nothing,
+                null,
                 ReentrantLock(),
                 DEFAULT_READ_BUFFER_SZ)
         associate_julia_struct(tcp.handle, tcp)

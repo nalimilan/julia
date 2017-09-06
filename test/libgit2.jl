@@ -704,7 +704,7 @@ mktempdir() do dir
                     # null because we are looking for a REMOTE branch
                     @test isnull(LibGit2.lookup_branch(repo, test_branch, true))
                     # not null because we are now looking for a LOCAL branch
-                    tbref = Base.get(LibGit2.lookup_branch(repo, test_branch, false))
+                    tbref = unwrap(LibGit2.lookup_branch(repo, test_branch, false))
                     try
                         @test LibGit2.shortname(tbref) == test_branch
                         @test isnull(LibGit2.upstream(tbref))
@@ -714,7 +714,7 @@ mktempdir() do dir
                     @test isnull(LibGit2.lookup_branch(repo, test_branch2, true))
                     # test deleting the branch
                     LibGit2.branch!(repo, test_branch2; set_head=false)
-                    tbref = Base.get(LibGit2.lookup_branch(repo, test_branch2, false))
+                    tbref = unwrap(LibGit2.lookup_branch(repo, test_branch2, false))
                     try
                         @test LibGit2.shortname(tbref) == test_branch2
                         LibGit2.delete_branch(tbref)
@@ -1322,7 +1322,7 @@ mktempdir() do dir
             LibGit2.with(LibGit2.GitIndex(repo)) do idx
                 i = find(test_file, idx)
                 @test !isnull(i)
-                idx_entry = idx[get(i)]
+                idx_entry = idx[unwrap(i)]
                 @test idx_entry !== nothing
                 idx_entry_str = sprint(show, idx_entry)
                 @test idx_entry_str == "IndexEntry($(string(idx_entry.id)))"
@@ -1348,7 +1348,7 @@ mktempdir() do dir
             # check file status
             st = LibGit2.status(repo, test_file)
             @test !isnull(st)
-            @test LibGit2.isset(get(st), LibGit2.Consts.STATUS_CURRENT)
+            @test LibGit2.isset(unwrap(st), LibGit2.Consts.STATUS_CURRENT)
 
             # modify file
             open(joinpath(test_repo, test_file), "a") do io
@@ -1357,28 +1357,28 @@ mktempdir() do dir
 
             # file modified but not staged
             st_mod = LibGit2.status(repo, test_file)
-            @test !LibGit2.isset(get(st_mod), LibGit2.Consts.STATUS_INDEX_MODIFIED)
-            @test LibGit2.isset(get(st_mod), LibGit2.Consts.STATUS_WT_MODIFIED)
+            @test !LibGit2.isset(unwrap(st_mod), LibGit2.Consts.STATUS_INDEX_MODIFIED)
+            @test LibGit2.isset(unwrap(st_mod), LibGit2.Consts.STATUS_WT_MODIFIED)
 
             # stage file
             LibGit2.add!(repo, test_file)
 
             # modified file staged
             st_stg = LibGit2.status(repo, test_file)
-            @test LibGit2.isset(get(st_stg), LibGit2.Consts.STATUS_INDEX_MODIFIED)
-            @test !LibGit2.isset(get(st_stg), LibGit2.Consts.STATUS_WT_MODIFIED)
+            @test LibGit2.isset(unwrap(st_stg), LibGit2.Consts.STATUS_INDEX_MODIFIED)
+            @test !LibGit2.isset(unwrap(st_stg), LibGit2.Consts.STATUS_WT_MODIFIED)
 
             # try to unstage to unknown commit
             @test_throws LibGit2.Error.GitError LibGit2.reset!(repo, "XYZ", test_file)
 
             # status should not change
             st_new = LibGit2.status(repo, test_file)
-            @test get(st_new) == get(st_stg)
+            @test unwrap(st_new) == unwrap(st_stg)
 
             # try to unstage to HEAD
             new_head = LibGit2.reset!(repo, LibGit2.Consts.HEAD_FILE, test_file)
             st_uns = LibGit2.status(repo, test_file)
-            @test get(st_uns) == get(st_mod)
+            @test unwrap(st_uns) == unwrap(st_mod)
 
             # reset repo
             @test_throws LibGit2.Error.GitError LibGit2.reset!(repo, LibGit2.GitHash(), LibGit2.Consts.RESET_HARD)
@@ -1404,7 +1404,7 @@ mktempdir() do dir
             for r in (repo, path)
                 # Set just the fetch URL
                 LibGit2.set_remote_fetch_url(r, remote_name, url)
-                remote = get(LibGit2.lookup_remote(repo, remote_name))
+                remote = unwrap(LibGit2.lookup_remote(repo, remote_name))
                 @test LibGit2.name(remote) == remote_name
                 @test LibGit2.url(remote) == url
                 @test LibGit2.push_url(remote) == ""
@@ -1414,7 +1414,7 @@ mktempdir() do dir
 
                 # Set just the push URL
                 LibGit2.set_remote_push_url(r, remote_name, url)
-                remote = get(LibGit2.lookup_remote(repo, remote_name))
+                remote = unwrap(LibGit2.lookup_remote(repo, remote_name))
                 @test LibGit2.name(remote) == remote_name
                 @test LibGit2.url(remote) == ""
                 @test LibGit2.push_url(remote) == url
@@ -1424,7 +1424,7 @@ mktempdir() do dir
 
                 # Set the fetch and push URL
                 LibGit2.set_remote_url(r, remote_name, url)
-                remote = get(LibGit2.lookup_remote(repo, remote_name))
+                remote = unwrap(LibGit2.lookup_remote(repo, remote_name))
                 @test LibGit2.name(remote) == remote_name
                 @test LibGit2.url(remote) ==  url
                 @test LibGit2.push_url(remote) == url
@@ -1669,17 +1669,17 @@ mktempdir() do dir
             invalid_key = joinpath(KEY_DIR, "invalid")
 
             function gen_ex(cred; username="git")
-                url = username !== nothing && !isempty(username) ? "$username@" : ""
+                url = !isnull(username) && !isempty(username) ? "$username@" : ""
                 url *= "github.com:test/package.jl"
                 quote
                     include($LIBGIT2_HELPER_PATH)
-                    credential_loop($cred, $url, Nullable{String}($username))
+                    credential_loop($cred, $url, $username)
                 end
             end
 
             ssh_ex = gen_ex(valid_cred)
             ssh_p_ex = gen_ex(valid_p_cred)
-            ssh_u_ex = gen_ex(valid_cred, username=nothing)
+            ssh_u_ex = gen_ex(valid_cred, username=null)
 
             # Note: We cannot use the default ~/.ssh/id_rsa for tests since we cannot be
             # sure a users will actually have these files. Instead we will use the ENV
@@ -1937,7 +1937,7 @@ mktempdir() do dir
                 quote
                     include($LIBGIT2_HELPER_PATH)
                     payload = CredentialPayload(allow_ssh_agent=true, allow_prompt=false)
-                    credential_loop($valid_cred, $url, Nullable{String}($username), payload)
+                    credential_loop($valid_cred, $url, Some($username), payload)
                 end
             end
 
@@ -1949,7 +1949,7 @@ mktempdir() do dir
 
             # A null username_ptr passed into `git_cred_ssh_key_from_agent` can cause a
             # segfault.
-            ex = gen_ex(username=nothing)
+            ex = gen_ex(username=null)
             err, auth_attempts = challenge_prompt(ex, [])
             @test err == eauth_error
             @test auth_attempts == 2
@@ -2074,7 +2074,7 @@ mktempdir() do dir
                 include($LIBGIT2_HELPER_PATH)
                 valid_cred = LibGit2.UserPasswordCredentials("foo", "bar")
                 payload = CredentialPayload(valid_cred, allow_ssh_agent=false)
-                credential_loop(valid_cred, "ssh://github.com/repo", Nullable(""),
+                credential_loop(valid_cred, "ssh://github.com/repo", Some(""),
                     Cuint(LibGit2.Consts.CREDTYPE_SSH_KEY), payload)
             end
 
@@ -2087,7 +2087,7 @@ mktempdir() do dir
                 include($LIBGIT2_HELPER_PATH)
                 valid_cred = LibGit2.SSHCredentials("foo", "", "", "")
                 payload = CredentialPayload(valid_cred, allow_ssh_agent=false)
-                credential_loop(valid_cred, "https://github.com/repo", Nullable(""),
+                credential_loop(valid_cred, "https://github.com/repo", Some(""),
                     Cuint(LibGit2.Consts.CREDTYPE_USERPASS_PLAINTEXT), payload)
             end
 
@@ -2107,7 +2107,7 @@ mktempdir() do dir
                 include($LIBGIT2_HELPER_PATH)
                 valid_cred = LibGit2.UserPasswordCredentials("foo", "bar")
                 payload = CredentialPayload(valid_cred, allow_ssh_agent=false)
-                credential_loop(valid_cred, "foo://github.com/repo", Nullable(""),
+                credential_loop(valid_cred, "foo://github.com/repo", Some(""),
                     $allowed_types, payload)
             end
 
@@ -2129,7 +2129,7 @@ mktempdir() do dir
             ex = quote
                 include($LIBGIT2_HELPER_PATH)
                 valid_cred = LibGit2.UserPasswordCredentials($valid_username, $valid_password)
-                user = Nullable{String}()
+                user = null
                 payload = CredentialPayload()
                 first_result = credential_loop(valid_cred, $(urls[1]), user, payload)
                 LibGit2.reset!(payload)

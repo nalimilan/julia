@@ -843,8 +843,8 @@ abstract type GitObject <: AbstractGitObject end
 
 for (typ, owntyp, sup, cname) in [
     (:GitRepo,           nothing,               :AbstractGitObject, :git_repository),
-    (:GitConfig,         :(Nullable{GitRepo}),  :AbstractGitObject, :git_config),
-    (:GitIndex,          :(Nullable{GitRepo}),  :AbstractGitObject, :git_index),
+    (:GitConfig,         :(Option{GitRepo}),    :AbstractGitObject, :git_config),
+    (:GitIndex,          :(Option{GitRepo}),    :AbstractGitObject, :git_index),
     (:GitRemote,         :GitRepo,              :AbstractGitObject, :git_remote),
     (:GitRevWalker,      :GitRepo,              :AbstractGitObject, :git_revwalk),
     (:GitReference,      :GitRepo,              :AbstractGitObject, :git_reference),
@@ -894,11 +894,11 @@ for (typ, owntyp, sup, cname) in [
                 return obj
             end
         end
-        if isa(owntyp, Expr) && owntyp.args[1] == :Nullable
+        if isa(owntyp, Expr) && owntyp.args[1] == :Option
             @eval begin
-                $typ(ptr::Ptr{Void}, fin::Bool=true) = $typ($owntyp(), ptr, fin)
+                $typ(ptr::Ptr{Void}, fin::Bool=true) = $typ(null, ptr, fin)
                 $typ(owner::$(owntyp.args[2]), ptr::Ptr{Void}, fin::Bool=true) =
-                    $typ($owntyp(owner), ptr, fin)
+                    $typ(Some(owner), ptr, fin)
             end
         end
     end
@@ -1152,13 +1152,13 @@ A `CredentialPayload` instance is expected to be `reset!` whenever it will be us
 different URL.
 """
 mutable struct CredentialPayload <: Payload
-    explicit::Nullable{AbstractCredentials}
-    cache::Nullable{CachedCredentials}
+    explicit::Option{AbstractCredentials}
+    cache::Option{CachedCredentials}
     allow_ssh_agent::Bool  # Allow the use of the SSH agent to get credentials
     allow_prompt::Bool     # Allow prompting the user for credentials
 
     # Ephemeral state fields
-    credential::Nullable{AbstractCredentials}
+    credential::Option{AbstractCredentials}
     first_pass::Bool
     use_ssh_agent::Bool
     scheme::String
@@ -1167,8 +1167,8 @@ mutable struct CredentialPayload <: Payload
     path::String
 
     function CredentialPayload(
-            credential::Nullable{<:AbstractCredentials}=Nullable{AbstractCredentials}(),
-            cache::Nullable{CachedCredentials}=Nullable{CachedCredentials}();
+            credential::Option{<:AbstractCredentials}=null,
+            cache::Option{CachedCredentials}=null;
             allow_ssh_agent::Bool=true,
             allow_prompt::Bool=true)
         payload = new(credential, cache, allow_ssh_agent, allow_prompt)
@@ -1177,11 +1177,11 @@ mutable struct CredentialPayload <: Payload
 end
 
 function CredentialPayload(credential::AbstractCredentials; kwargs...)
-    CredentialPayload(Nullable(credential), Nullable{CachedCredentials}(); kwargs...)
+    CredentialPayload(Some(credential), null; kwargs...)
 end
 
 function CredentialPayload(cache::CachedCredentials; kwargs...)
-    CredentialPayload(Nullable{AbstractCredentials}(), Nullable(cache); kwargs...)
+    CredentialPayload(null, Some(cache); kwargs...)
 end
 
 """
@@ -1191,7 +1191,7 @@ Reset the `payload` state back to the initial values so that it can be used agai
 the credential callback.
 """
 function reset!(p::CredentialPayload)
-    p.credential = Nullable{AbstractCredentials}()
+    p.credential = null
     p.first_pass = true
     p.use_ssh_agent = p.allow_ssh_agent
     p.scheme = ""
