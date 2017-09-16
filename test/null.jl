@@ -13,11 +13,11 @@
 # These conversions must fail to prevent ambiguities
 # when a value to wrap is already a Some or a Null
 @test_throws MethodError convert(Some, 1)
-@test_throws MethodError convert(Option, 1)
+@test_throws MethodError convert(Union{Some, Null}, 1)
 @test_throws MethodError convert(Some{Int}, 1)
 @test_throws MethodError convert(Union{Some{Int}, Null}, 1)
 
-@test convert(Some, Some(1)) === convert(Option, Some(1)) === Some(1)
+@test convert(Some, Some(1)) === convert(Union{Some, Null}, Some(1)) === Some(1)
 @test convert(Some{Int}, Some(1)) === convert(Union{Some{Int}, Null}, Some(1)) === Some(1)
 @test convert(Some{Int}, Some(1.0)) === convert(Union{Some{Int}, Null}, Some(1.0)) === Some(1)
 
@@ -32,13 +32,13 @@
 @test convert(Some, Some(nothing)) === Some(nothing)
 @test convert(Some{Void}, Some(nothing)) === Some(nothing)
 
-@test convert(Option, null) === null
-@test convert(Option, null) === null
+@test convert(Union{Some, Null}, null) === null
+@test convert(Union{Some, Null}, null) === null
 @test convert(Union{Some{Int}, Null}, null) === null
 
 @test_throws MethodError convert(Some, nothing)
 @test_throws MethodError convert(Some{Int}, nothing)
-@test_throws MethodError convert(Option, nothing)
+@test_throws MethodError convert(Union{Some, Null}, nothing)
 @test_throws MethodError convert(Union{Some{Int}, Null}, nothing)
 
 ## show()

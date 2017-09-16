@@ -11,7 +11,7 @@ Each `lock` must be matched with an `unlock`.
 This lock is NOT threadsafe. See `Threads.Mutex` for a threadsafe lock.
 """
 mutable struct ReentrantLock
-    locked_by::Option{Task}
+    locked_by::Union{Some{Task}, Null}
     cond_wait::Condition
     reentrancy_cnt::Int
 
@@ -44,7 +44,7 @@ function trylock(rl::ReentrantLock)
         rl.locked_by = Some(t)
         rl.reentrancy_cnt = 1
         return true
-    elseif t == unwrap(rl.locked_by)
+    elseif t == get(rl.locked_by)
         rl.reentrancy_cnt += 1
         return true
     end
@@ -67,7 +67,7 @@ function lock(rl::ReentrantLock)
             rl.locked_by = Some(t)
             rl.reentrancy_cnt = 1
             return
-        elseif t == unwrap(rl.locked_by)
+        elseif t == get(rl.locked_by)
             rl.reentrancy_cnt += 1
             return
         end

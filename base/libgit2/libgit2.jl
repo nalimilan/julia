@@ -258,7 +258,7 @@ Equivalent to `git fetch [<remoteurl>|<repo>] [<refspecs>]`.
 function fetch(repo::GitRepo; remote::AbstractString="origin",
                remoteurl::AbstractString="",
                refspecs::Vector{<:AbstractString}=AbstractString[],
-               payload::Union{CredentialPayload,Option{<:AbstractCredentials}}=CredentialPayload())
+               payload::Union{CredentialPayload,Union{Some{<:AbstractCredentials}, Null}}=CredentialPayload())
     p = reset!(deprecate_nullable_creds(:fetch, "repo", payload))
     rmt = if isempty(remoteurl)
         get(GitRemote, repo, remote)
@@ -293,7 +293,7 @@ function push(repo::GitRepo; remote::AbstractString="origin",
               remoteurl::AbstractString="",
               refspecs::Vector{<:AbstractString}=AbstractString[],
               force::Bool=false,
-              payload::Union{CredentialPayload,Option{<:AbstractCredentials}}=CredentialPayload())
+              payload::Union{CredentialPayload,Union{Some{<:AbstractCredentials}, Null}}=CredentialPayload())
     p = reset!(deprecate_nullable_creds(:push, "repo", payload))
     rmt = if isempty(remoteurl)
         get(GitRemote, repo, remote)
@@ -366,10 +366,10 @@ function branch!(repo::GitRepo, branch_name::AbstractString,
                     end
                 end
             else
-                tmpcmt = with(peel(GitCommit, unwrap(branch_rmt_ref))) do hrc
+                tmpcmt = with(peel(GitCommit, Base.get(branch_rmt_ref))) do hrc
                     GitHash(hrc)
                 end
-                close(unwrap(branch_rmt_ref))
+                close(Base.get(branch_rmt_ref))
                 tmpcmt
             end
         else
@@ -392,7 +392,7 @@ function branch!(repo::GitRepo, branch_name::AbstractString,
             try
                 with(GitConfig, repo) do cfg
                     set!(cfg, "branch.$branch_name.remote", Consts.REMOTE_ORIGIN)
-                    set!(cfg, "branch.$branch_name.merge", name(unwrap(branch_ref)))
+                    set!(cfg, "branch.$branch_name.merge", name(Base.get(branch_ref)))
                 end
             catch
                 warn("Please provide remote tracking for branch '$branch_name' in '$(path(repo))'")
@@ -401,15 +401,15 @@ function branch!(repo::GitRepo, branch_name::AbstractString,
 
         if set_head
             # checkout selected branch
-            with(peel(GitTree, unwrap(branch_ref))) do btree
+            with(peel(GitTree, Base.get(branch_ref))) do btree
                 checkout_tree(repo, btree)
             end
 
             # switch head to the branch
-            head!(repo, unwrap(branch_ref))
+            head!(repo, Base.get(branch_ref))
         end
     finally
-        close(unwrap(branch_ref))
+        close(Base.get(branch_ref))
     end
     return
 end
@@ -502,7 +502,7 @@ function clone(repo_url::AbstractString, repo_path::AbstractString;
                branch::AbstractString="",
                isbare::Bool = false,
                remote_cb::Ptr{Void} = C_NULL,
-               payload::Union{CredentialPayload,Option{<:AbstractCredentials}}=CredentialPayload())
+               payload::Union{CredentialPayload,Union{Some{<:AbstractCredentials}, Null}}=CredentialPayload())
     # setup clone options
     lbranch = Base.cconvert(Cstring, branch)
     p = reset!(deprecate_nullable_creds(:clone, "repo_url, repo_path", payload))
@@ -697,9 +697,9 @@ function merge!(repo::GitRepo;
                                        "There is no tracking information for the current branch."))
                     end
                     try
-                        [GitAnnotated(repo, unwrap(tr_brn_ref))]
+                        [GitAnnotated(repo, Base.get(tr_brn_ref))]
                     finally
-                        close(unwrap(tr_brn_ref))
+                        close(Base.get(tr_brn_ref))
                     end
                 end
             end
@@ -741,7 +741,7 @@ function rebase!(repo::GitRepo, upstream::AbstractString="", newbase::AbstractSt
                                "There is no tracking information for the current branch."))
             end
             try
-                GitAnnotated(repo, unwrap(brn_ref))
+                GitAnnotated(repo, Base.get(brn_ref))
             finally
                 close(brn_ref)
             end
@@ -765,12 +765,12 @@ function rebase!(repo::GitRepo, upstream::AbstractString="", newbase::AbstractSt
                     close(rbs)
                 end
             finally
-                #!isnull(onto_ann) && close(unwrap(onto_ann))
+                #!isnull(onto_ann) && close(get(onto_ann))
                 close(sig)
             end
         finally
             if !isempty(newbase)
-                close(unwrap(onto_ann))
+                close(Base.get(onto_ann))
             end
             close(upst_ann)
             close(head_ann)

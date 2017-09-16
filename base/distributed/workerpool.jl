@@ -185,7 +185,7 @@ performs a `remote_do` on it.
 """
 remote_do(f, pool::AbstractWorkerPool, args...; kwargs...) = remotecall_pool(remote_do, f, pool, args...; kwargs...)
 
-const _default_worker_pool = Ref{Option{WorkerPool}}(null)
+const _default_worker_pool = Ref{Union{Some{WorkerPool}, Null}}(null)
 
 """
     default_worker_pool()
@@ -202,7 +202,7 @@ function default_worker_pool()
             _default_worker_pool[] = Some(remotecall_fetch(()->default_worker_pool(), 1))
         end
     end
-    return unwrap(_default_worker_pool[])
+    return get(_default_worker_pool[])
 end
 
 """

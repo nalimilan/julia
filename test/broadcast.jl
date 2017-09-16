@@ -457,7 +457,7 @@ end
 end
 
 # broadcast should only "peel off" one container layer
-@test unwrap.([Some(1), Some(2)]) == [1, 2]
+@test get.([Some(1), Some(2)]) == [1, 2]
 let io = IOBuffer()
     broadcast(x -> print(io, x), [Some(1.0)])
     @test String(take!(io)) == "Some(1.0)"

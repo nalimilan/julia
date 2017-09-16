@@ -209,19 +209,19 @@ end
 function connect(manager::ZMQCMan, pid::Int, config::WorkerConfig)
     #println("connect_m2w")
     if myid() == 1
-        zid = unwrap(config.userdata)[:zid]
+        zid = get(config.userdata)[:zid]
         config.connect_at = zid # This will be useful in the worker-to-worker connection setup.
 
-        print_worker_stdout(unwrap(config.userdata)[:io], pid)
+        print_worker_stdout(get(config.userdata)[:io], pid)
     else
         #println("connect_w2w")
-        zid = unwrap(config.connect_at)
+        zid = get(config.connect_at)
         config.userdata = Some(Dict{Symbol, Any}(:zid=>zid))
     end
 
     streams = setup_connection(zid, SELF_INITIATED)
 
-    udata = unwrap(config.userdata)
+    udata = get(config.userdata)
     udata[:streams] = streams
 
     streams
@@ -257,12 +257,12 @@ end
 
 function kill(manager::ZMQCMan, pid::Int, config::WorkerConfig)
     send_data(get(config.userdata)[:zid], CONTROL_MSG, KILL_MSG)
-    (r_s, w_s) = unwrap(config.userdata)[:streams]
+    (r_s, w_s) = get(config.userdata)[:streams]
     close(r_s)
     close(w_s)
 
     # remove from our map
-    delete!(manager.map_zmq_julia, unwrap(config.userdata)[:zid])
+    delete!(manager.map_zmq_julia, get(config.userdata)[:zid])
 
     nothing
 end

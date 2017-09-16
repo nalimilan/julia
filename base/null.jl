@@ -17,30 +17,21 @@ const null = Null()
 """
     Some{T}
 
-A wrapper type used with [`Option`](@ref) (a.k.a. `Union{Null, Some{T}}`). Its main
-purposes are to force handling the possibility of the `Option` being [`null`](@ref)
-by calling [`unwrap`](@ref) (with [`isnull`](@ref)) before actually using the wrapped
-value; and to allow distinguishing `null` from `Some(null)` when an `Option` may wrap
-a `null` value.
+A wrapper type used with `Union{Some{T}, Null}` to distinguish between the absence
+of a value ([`null`](@ref)) and the presence of a `null` value (i.e. `Some(null)`).
+It can also be used to force users of a function argument or of an object field
+to explicitly handle the possibility of a field or argument being `null`,
+by calling [`get`](@ref) (with [`isnull`](@ref)) before actually using the wrapped
+value.
 """
 struct Some{T}
     value::T
 end
 
-"""
-    Option{T}
-
-A type alias for `Union{Null, Some{T}}` used to hold either a value of type `T` inside
-a [`Some`](@ref) wrapper, or a [`null`](@ref) value. Use [`isnull`](@ref) to check whether
-an `Option` object is null, and [`unwrap`](@ref) to access the value inside the `Some`
-object if not.
-"""
-Option{T} = Union{Null, Some{T}}
-
 eltype(::Type{Some{T}}) where {T} = T
 
 promote_rule(::Type{Some{S}}, ::Type{Some{T}}) where {S,T} = Some{promote_type(S, T)}
-promote_rule(::Type{Some{T}}, ::Type{Null}) where {T} = Option{T}
+promote_rule(::Type{Some{T}}, ::Type{Null}) where {T} = Union{Some{T}, Null}
 
 convert(::Type{Some{T}}, x::Some) where {T} = Some{T}(convert(T, x.value))
 
@@ -48,10 +39,7 @@ convert(::Type{Null}, ::Null) = null
 convert(::Type{Null}, ::Void) = null
 convert(::Type{Null}, ::Any) = throw(NullException())
 
-convert(::Type{Option{T}}, ::Null) where {T} = null
-convert(::Type{Option   }, ::Null)           = null
-
-convert(::Type{Option{T}}, x::Some) where {T} = convert(Some{T}, x)
+convert(::Type{Union{Some{T}, Null}}, x::Some) where {T} = convert(Some{T}, x)
 
 show(io::IO, ::Null) = print(io, "null")
 
@@ -82,32 +70,34 @@ isnull(x) = false
 isnull(::Null) = true
 
 """
-    unwrap(x::Option[, y])
+    get(x::Some[, y])
+    get(x::Null[, y])
 
-Attempt to access the value of `x`. Returns the value if `x` is not [`null`](@ref),
-otherwise, returns `y` if provided, or throws a `NullException` if not.
+Attempt to access the value wrapped in `x`. Returns the value if
+`x` is not [`null`](@ref) (i.e. it is a `Some` object).
+If `x` is `null`, returns `y` if provided, or throws a `NullException` if not.
 
 # Examples
 ```jldoctest
-julia> unwrap(Some(5))
+julia> get(Some(5))
 5
 
-julia> unwrap(null)
+julia> get(null)
 ERROR: NullException()
 [...]
 
-julia> unwrap(Some(1), 0)
+julia> get(Some(1), 0)
 1
 
-julia> unwrap(null, 0)
+julia> get(null, 0)
 0
 
 ```
 """
-function unwrap end
+function get end
 
-unwrap(x::Some) = x.value
-unwrap(::Null) = throw(NullException())
+get(x::Some) = x.value
+get(::Null) = throw(NullException())
 
-unwrap(x::Some, y) = x.value
-unwrap(x::Null, y) = y
+get(x::Some, y) = x.value
+get(x::Null, y) = y

@@ -56,7 +56,7 @@ function repository(idx::GitIndex)
     if isnull(idx.owner)
         throw(GitError(Error.Index, Error.ENOTFOUND, "Index does not have an owning repository."))
     else
-        return unwrap(idx.owner)
+        return Base.get(idx.owner)
     end
 end
 

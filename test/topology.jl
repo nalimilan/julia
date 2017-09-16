@@ -61,9 +61,9 @@ end
 const map_pid_ident=Dict()
 function Base.manage(manager::TopoTestManager, id::Integer, config::WorkerConfig, op::Symbol)
     if op == :register
-        map_pid_ident[id] = unwrap(config.ident)
+        map_pid_ident[id] = get(config.ident)
     elseif op == :interrupt
-        kill(unwrap(config.process), 2)
+        kill(get(config.process), 2)
     end
 end
 

@@ -61,11 +61,12 @@ function GitRemoteAnon(repo::GitRepo, url::AbstractString)
 end
 
 """
-    lookup_remote(repo::GitRepo, remote_name::AbstractString) -> Option{GitRemote}
+    lookup_remote(repo::GitRepo, remote_name::AbstractString) -> Union{Some{GitRemote}, Null}
 
 Determine if the `remote_name` specified exists within the `repo`. Returns an
-[`Option`](@ref), which will be null if the requested remote does not exist. If the remote
-does exist, the `Option` contains a [`GitRemote`](@ref) to the remote name.
+either a [`Some`](@ref) object, or [`null`](@ref) if the requested remote
+does not exist. If the remote does exist, the `Some` wrapper
+contains a [`GitRemote`](@ref) to the remote name.
 
 # Examples
 ```julia

@@ -704,7 +704,7 @@ mktempdir() do dir
                     # null because we are looking for a REMOTE branch
                     @test isnull(LibGit2.lookup_branch(repo, test_branch, true))
                     # not null because we are now looking for a LOCAL branch
-                    tbref = unwrap(LibGit2.lookup_branch(repo, test_branch, false))
+                    tbref = Base.get(LibGit2.lookup_branch(repo, test_branch, false))
                     try
                         @test LibGit2.shortname(tbref) == test_branch
                         @test isnull(LibGit2.upstream(tbref))
@@ -714,7 +714,7 @@ mktempdir() do dir
                     @test isnull(LibGit2.lookup_branch(repo, test_branch2, true))
                     # test deleting the branch
                     LibGit2.branch!(repo, test_branch2; set_head=false)
-                    tbref = unwrap(LibGit2.lookup_branch(repo, test_branch2, false))
+                    tbref = Base.get(LibGit2.lookup_branch(repo, test_branch2, false))
                     try
                         @test LibGit2.shortname(tbref) == test_branch2
                         LibGit2.delete_branch(tbref)
@@ -1322,7 +1322,7 @@ mktempdir() do dir
             LibGit2.with(LibGit2.GitIndex(repo)) do idx
                 i = find(test_file, idx)
                 @test !isnull(i)
-                idx_entry = idx[unwrap(i)]
+                idx_entry = idx[get(i)]
                 @test idx_entry !== nothing
                 idx_entry_str = sprint(show, idx_entry)
                 @test idx_entry_str == "IndexEntry($(string(idx_entry.id)))"
@@ -1348,7 +1348,7 @@ mktempdir() do dir
             # check file status
             st = LibGit2.status(repo, test_file)
             @test !isnull(st)
-            @test LibGit2.isset(unwrap(st), LibGit2.Consts.STATUS_CURRENT)
+            @test LibGit2.isset(get(st), LibGit2.Consts.STATUS_CURRENT)
 
             # modify file
             open(joinpath(test_repo, test_file), "a") do io
@@ -1357,28 +1357,28 @@ mktempdir() do dir
 
             # file modified but not staged
             st_mod = LibGit2.status(repo, test_file)
-            @test !LibGit2.isset(unwrap(st_mod), LibGit2.Consts.STATUS_INDEX_MODIFIED)
-            @test LibGit2.isset(unwrap(st_mod), LibGit2.Consts.STATUS_WT_MODIFIED)
+            @test !LibGit2.isset(get(st_mod), LibGit2.Consts.STATUS_INDEX_MODIFIED)
+            @test LibGit2.isset(get(st_mod), LibGit2.Consts.STATUS_WT_MODIFIED)
 
             # stage file
             LibGit2.add!(repo, test_file)
 
             # modified file staged
             st_stg = LibGit2.status(repo, test_file)
-            @test LibGit2.isset(unwrap(st_stg), LibGit2.Consts.STATUS_INDEX_MODIFIED)
-            @test !LibGit2.isset(unwrap(st_stg), LibGit2.Consts.STATUS_WT_MODIFIED)
+            @test LibGit2.isset(get(st_stg), LibGit2.Consts.STATUS_INDEX_MODIFIED)
+            @test !LibGit2.isset(get(st_stg), LibGit2.Consts.STATUS_WT_MODIFIED)
 
             # try to unstage to unknown commit
             @test_throws LibGit2.Error.GitError LibGit2.reset!(repo, "XYZ", test_file)
 
             # status should not change
             st_new = LibGit2.status(repo, test_file)
-            @test unwrap(st_new) == unwrap(st_stg)
+            @test get(st_new) == get(st_stg)
 
             # try to unstage to HEAD
             new_head = LibGit2.reset!(repo, LibGit2.Consts.HEAD_FILE, test_file)
             st_uns = LibGit2.status(repo, test_file)
-            @test unwrap(st_uns) == unwrap(st_mod)
+            @test get(st_uns) == get(st_mod)
 
             # reset repo
             @test_throws LibGit2.Error.GitError LibGit2.reset!(repo, LibGit2.GitHash(), LibGit2.Consts.RESET_HARD)
@@ -1404,7 +1404,7 @@ mktempdir() do dir
             for r in (repo, path)
                 # Set just the fetch URL
                 LibGit2.set_remote_fetch_url(r, remote_name, url)
-                remote = unwrap(LibGit2.lookup_remote(repo, remote_name))
+                remote = get(LibGit2.lookup_remote(repo, remote_name))
                 @test LibGit2.name(remote) == remote_name
                 @test LibGit2.url(remote) == url
                 @test LibGit2.push_url(remote) == ""
@@ -1414,7 +1414,7 @@ mktempdir() do dir
 
                 # Set just the push URL
                 LibGit2.set_remote_push_url(r, remote_name, url)
-                remote = unwrap(LibGit2.lookup_remote(repo, remote_name))
+                remote = get(LibGit2.lookup_remote(repo, remote_name))
                 @test LibGit2.name(remote) == remote_name
                 @test LibGit2.url(remote) == ""
                 @test LibGit2.push_url(remote) == url
@@ -1424,7 +1424,7 @@ mktempdir() do dir
 
                 # Set the fetch and push URL
                 LibGit2.set_remote_url(r, remote_name, url)
-                remote = unwrap(LibGit2.lookup_remote(repo, remote_name))
+                remote = get(LibGit2.lookup_remote(repo, remote_name))
                 @test LibGit2.name(remote) == remote_name
                 @test LibGit2.url(remote) ==  url
                 @test LibGit2.push_url(remote) == url

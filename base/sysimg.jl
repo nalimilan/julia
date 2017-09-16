@@ -219,7 +219,7 @@ include("multidimensional.jl")
 include("permuteddimsarray.jl")
 using .PermutedDimsArrays
 
-# Null, Some and Option types
+# Null and Some types
 include("null.jl")
 
 include("broadcast.jl")

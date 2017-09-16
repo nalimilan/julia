@@ -17,7 +17,7 @@ Stack information representing execution context, with the following fields:
 
   The name of the function containing the execution context.
 
-- `linfo::Option{Core.MethodInstance}`
+- `linfo::Union{Some{Core.MethodInstance}, Null}`
 
   The MethodInstance containing the execution context (if it could be found).
 
@@ -50,7 +50,7 @@ struct StackFrame # this type should be kept platform-agnostic so that profiles 
     "the line number in the file containing the execution context"
     line::Int
     "the MethodInstance containing the execution context (if it could be found)"
-    linfo::Option{Core.MethodInstance}
+    linfo::Union{Some{Core.MethodInstance}, Null}
     "true if the code is from C"
     from_c::Bool
     "true if the code is from an inlined frame"
@@ -213,7 +213,7 @@ function show_spec_linfo(io::IO, frame::StackFrame)
             print_with_color(Base.have_color && get(io, :backtrace, false) ? Base.stackframe_function_color() : :nothing, io, string(frame.func))
         end
     else
-        linfo = unwrap(frame.linfo)
+        linfo = get(frame.linfo)
         if isa(linfo.def, Method)
             Base.show_tuple_as_call(io, linfo.def.name, linfo.specTypes)
         else
@@ -251,7 +251,7 @@ function from(frame::StackFrame, m::Module)
     result = false
 
     if !isnull(finfo)
-        frame_m = unwrap(finfo).def
+        frame_m = get(finfo).def
         isa(frame_m, Method) && (frame_m = frame_m.module)
         result = module_name(frame_m) === module_name(m)
     end

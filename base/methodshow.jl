@@ -94,7 +94,7 @@ function show_method_params(io::IO, tv)
     end
 end
 
-function show(io::IO, m::Method; kwtype::Option{DataType}=null)
+function show(io::IO, m::Method; kwtype::Union{Some{DataType}, Null}=null)
     tv, decls, file, line = arg_decl_parts(m)
     sig = unwrap_unionall(m.sig)
     ft0 = sig.parameters[1]
@@ -122,7 +122,7 @@ function show(io::IO, m::Method; kwtype::Option{DataType}=null)
     join(io, [isempty(d[2]) ? d[1] : d[1]*"::"*d[2] for d in decls[2:end]],
                  ", ", ", ")
     if !isnull(kwtype)
-        kwargs = kwarg_decl(m, unwrap(kwtype))
+        kwargs = kwarg_decl(m, get(kwtype))
         if !isempty(kwargs)
             print(io, "; ")
             join(io, kwargs, ", ", ", ")
@@ -225,7 +225,7 @@ function url(m::Method)
     end
 end
 
-function show(io::IO, ::MIME"text/html", m::Method; kwtype::Option{DataType}=null)
+function show(io::IO, ::MIME"text/html", m::Method; kwtype::Union{Some{DataType}, Null}=null)
     tv, decls, file, line = arg_decl_parts(m)
     sig = unwrap_unionall(m.sig)
     ft0 = sig.parameters[1]
@@ -254,7 +254,7 @@ function show(io::IO, ::MIME"text/html", m::Method; kwtype::Option{DataType}=nul
     join(io, [isempty(d[2]) ? d[1] : d[1]*"::<b>"*d[2]*"</b>"
                       for d in decls[2:end]], ", ", ", ")
     if !isnull(kwtype)
-        kwargs = kwarg_decl(m, unwrap(kwtype))
+        kwargs = kwarg_decl(m, get(kwtype))
         if !isempty(kwargs)
             print(io, "; <i>")
             join(io, kwargs, ", ", ", ")

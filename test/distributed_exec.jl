@@ -256,7 +256,7 @@ function test_regular_io_ser(ref::Base.Distributed.AbstractRemoteRef)
         v = getfield(ref2, fld)
         if isa(v, Number)
             @test v === zero(typeof(v))
-        elseif isa(v, Option)
+        elseif isa(v, Union{Some, Null})
             @test v === null
         else
             error(string("Add test for field ", fld))
@@ -961,7 +961,7 @@ if DoFullTest
     # error message but should not terminate.
     for w in Base.Distributed.PGRP.workers
         if isa(w, Base.Distributed.Worker)
-            local s = connect(unwrap(w.config.host), unwrap(w.config.port))
+            local s = connect(get(w.config.host), get(w.config.port))
             write(s, randstring(32))
         end
     end
@@ -1299,7 +1299,7 @@ end
 function test_blas_config(pid, expected)
     for worker in Base.Distributed.PGRP.workers
         if worker.id == pid
-            @test unwrap(worker.config.enable_threaded_blas) == expected
+            @test get(worker.config.enable_threaded_blas) == expected
             return
         end
     end

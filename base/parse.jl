@@ -205,11 +205,11 @@ tryparse(::Type{T}, s::AbstractString) where {T<:Integer} =
     tryparse_internal(T, s, start(s), endof(s), 0, false)
 
 function parse(::Type{T}, s::AbstractString, base::Integer) where T<:Integer
-    unwrap(tryparse_internal(T, s, start(s), endof(s), check_valid_base(base), true))
+    get(tryparse_internal(T, s, start(s), endof(s), check_valid_base(base), true))
 end
 
 function parse(::Type{T}, s::AbstractString) where T<:Integer
-    unwrap(tryparse_internal(T, s, start(s), endof(s), 0, true)) # Zero means, "figure it out"
+    get(tryparse_internal(T, s, start(s), endof(s), 0, true)) # Zero means, "figure it out"
 end
 
 
@@ -237,14 +237,14 @@ function tryparse(::Type{Float32}, s::SubString{String})
 end
 tryparse(::Type{T}, s::AbstractString) where {T<:Union{Float32,Float64}} = tryparse(T, String(s))
 
-tryparse(::Type{Float16}, s::AbstractString) = convert(Option{Float16}, tryparse(Float32, s))
+tryparse(::Type{Float16}, s::AbstractString) = convert(Union{Some{Float16}, Null}, tryparse(Float32, s))
 
 function parse(::Type{T}, s::AbstractString) where T<:AbstractFloat
     result = tryparse(T, s)
     if isnull(result)
         throw(ArgumentError("cannot parse $(repr(s)) as $T"))
     end
-    return unwrap(result)
+    return get(result)
 end
 
 float(x::AbstractString) = parse(Float64,x)

@@ -657,7 +657,7 @@ function next(P::ProductIterator, state)
     iter1 = first(iterators)
     value1, state1 = next(iter1, states[1])
     tailstates = tail(states)
-    values = (value1, map(unwrap, nvalues)...) # safe if not done(P, state)
+    values = (value1, map(get, nvalues)...) # safe if not done(P, state)
     if done(iter1, state1)
         d, tailstates, nvalues = _prod_next(tail(iterators), tailstates, nvalues)
         if !d # only restart iter1 if not completely done

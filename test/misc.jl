@@ -734,10 +734,10 @@ if Bool(parse(Int,(get(ENV, "JULIA_TESTFULL", "0"))))
         Demo_20254(string.(arr))
     end
 
-    _unwrap(x::NTuple{1}) = (unwrap(x[1]),)
-    _unwrap_19433(xs::Vararg) = (unwrap(xs[1]), _unwrap_19433(xs[2:end])...)
+    _get(x::NTuple{1}) = (get(x[1]),)
+    _get_19433(xs::Vararg) = (get(xs[1]), _get_19433(xs[2:end])...)
 
-    f_19433(f_19433, xs...) = f_19433(_unwrap_19433(xs)...)
+    f_19433(f_19433, xs...) = f_19433(_get_19433(xs)...)
 
     @testset "test this does not crash, issue #19433 and #20254" begin
         @test_throws StackOverflowError Demo_20254()

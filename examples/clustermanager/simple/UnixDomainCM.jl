@@ -30,19 +30,19 @@ function connect(manager::UnixDomainCM, pid::Int, config::WorkerConfig)
     if myid() == 1
 #        println("connect_m2w")
         # This will be useful in the worker-to-worker connection setup.
-        config.connect_at = Some(unwrap(config.userdata)[:sockname])
+        config.connect_at = Some(get(config.userdata)[:sockname])
 
-        print_worker_stdout(unwrap(config.userdata)[:io], pid)
+        print_worker_stdout(get(config.userdata)[:io], pid)
     else
 #        println("connect_w2w")
-        sockname = unwrap(config.connect_at)
+        sockname = get(config.connect_at)
         config.userdata = Some(Dict{Symbol, Any}(:sockname=>sockname))
     end
 
     t = time()
     while true
         try
-            address = unwrap(config.userdata)[:sockname]
+            address = get(config.userdata)[:sockname]
             if isa(address, Tuple)
                 sock = connect(address...)
             else
@@ -75,7 +75,7 @@ function manage(manager::UnixDomainCM, id::Int, config::WorkerConfig, op)
     # Does not seem to be required, filesystem entry cleanup is happening automatically on process exit
 #     if op == :deregister
 #         try
-#             rm(unwrap(config.userdata)[:sockname])
+#             rm(get(config.userdata)[:sockname])
 #         end
 #     end
     nothing

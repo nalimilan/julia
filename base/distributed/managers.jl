@@ -225,10 +225,10 @@ end
 
 function manage(manager::SSHManager, id::Integer, config::WorkerConfig, op::Symbol)
     if op == :interrupt
-        ospid = unwrap(config.ospid, 0)
+        ospid = get(config.ospid, 0)
         if ospid > 0
-            host = unwrap(config.host)
-            sshflags = unwrap(config.sshflags)
+            host = get(config.host)
+            sshflags = get(config.sshflags)
             if !success(`ssh -T -a -x -o ClearAllForwardings=yes -n $sshflags $host "kill -2 $ospid"`)
                 warn(STDERR,"error sending a Ctrl-C to julia worker $id on $host")
             end
@@ -339,7 +339,7 @@ end
 
 function manage(manager::LocalManager, id::Integer, config::WorkerConfig, op::Symbol)
     if op == :interrupt
-        kill(unwrap(config.process), 2)
+        kill(get(config.process), 2)
     end
 end
 
@@ -392,17 +392,17 @@ function connect(manager::ClusterManager, pid::Int, config::WorkerConfig)
 
     # master connecting to workers
     if !isnull(config.io)
-        (bind_addr, port) = read_worker_host_port(unwrap(config.io))
-        pubhost = unwrap(config.host, bind_addr)
+        (bind_addr, port) = read_worker_host_port(get(config.io))
+        pubhost = get(config.host, bind_addr)
         config.host = Some(pubhost)
         config.port = Some(port)
     else
-        pubhost = unwrap(config.host)
-        port = unwrap(config.port)
-        bind_addr = unwrap(config.bind_addr, pubhost)
+        pubhost = get(config.host)
+        port = get(config.port)
+        bind_addr = get(config.bind_addr, pubhost)
     end
 
-    tunnel = unwrap(config.tunnel, false)
+    tunnel = get(config.tunnel, false)
 
     s = split(pubhost,'@')
     user = ""
@@ -420,11 +420,11 @@ function connect(manager::ClusterManager, pid::Int, config::WorkerConfig)
 
     if tunnel
         if !haskey(tunnel_hosts_map, pubhost)
-            tunnel_hosts_map[pubhost] = Semaphore(unwrap(config.max_parallel, typemax(Int)))
+            tunnel_hosts_map[pubhost] = Semaphore(get(config.max_parallel, typemax(Int)))
         end
         sem = tunnel_hosts_map[pubhost]
 
-        sshflags = unwrap(config.sshflags)
+        sshflags = get(config.sshflags)
         acquire(sem)
         try
             (s, bind_addr) = connect_to_worker(pubhost, bind_addr, port, user, sshflags)
@@ -442,7 +442,7 @@ function connect(manager::ClusterManager, pid::Int, config::WorkerConfig)
 
     if !isnull(config.io)
         let pid = pid
-            redirect_worker_output(pid, unwrap(config.io))
+            redirect_worker_output(pid, get(config.io))
         end
     end
 
@@ -450,7 +450,7 @@ function connect(manager::ClusterManager, pid::Int, config::WorkerConfig)
 end
 
 function connect_w2w(pid::Int, config::WorkerConfig)
-    (rhost, rport) = unwrap(config.connect_at)
+    (rhost, rport) = get(config.connect_at)
     config.host = Some(rhost)
     config.port = Some(rport)
     (s, bind_addr) = connect_to_worker(rhost, rport)

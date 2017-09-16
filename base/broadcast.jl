@@ -309,9 +309,9 @@ _broadcast_eltype(f, A, As...) =
     end
     return broadcast_t(f, Any, shape, iter, A, Bs...)
 end
-_unwrap(x::Option) = unwrap(x)
-_unwrap(x::Any) = x
-@inline broadcast_c(f, ::Type{Some}, a...) = Some(f(map(_unwrap, a)...))
+_get(x::Union{Some, Null}) = get(x)
+_get(x::Any) = x
+@inline broadcast_c(f, ::Type{Some}, a...) = Some(f(map(_get, a)...))
 @inline broadcast_c(f, ::Type{Any}, a...) = f(a...)
 @inline broadcast_c(f, ::Type{Tuple}, A, Bs...) =
     tuplebroadcast(f, first_tuple(A, Bs...), A, Bs...)

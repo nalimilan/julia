@@ -21,7 +21,7 @@ mutable struct Channel{T} <: AbstractChannel
     cond_take::Condition    # waiting for data to become available
     cond_put::Condition     # waiting for a writeable slot
     state::Symbol
-    excp::Option{Exception} # Exception to be thrown when state != :open
+    excp::Union{Some{Exception}, Null} # Exception to be thrown when state != :open
 
     data::Vector{T}
     sz_max::Int            # maximum size of channel
@@ -129,7 +129,7 @@ isbuffered(c::Channel) = c.sz_max==0 ? false : true
 
 function check_channel_state(c::Channel)
     if !isopen(c)
-        !isnull(c.excp) && throw(unwrap(c.excp))
+        !isnull(c.excp) && throw(get(c.excp))
         throw(closed_exception())
     end
 end
@@ -388,7 +388,7 @@ function notify_error(c::Channel, err)
         foreach(t->schedule(t, err; error=true), waiters)
     end
 end
-notify_error(c::Channel) = notify_error(c, unwrap(c.excp))
+notify_error(c::Channel) = notify_error(c, get(c.excp))
 
 eltype(::Type{Channel{T}}) where {T} = T
 

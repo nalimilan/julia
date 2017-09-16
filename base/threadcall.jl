@@ -1,12 +1,12 @@
 # This file is a part of Julia. License is MIT: https://julialang.org/license
 
 const max_ccall_threads = parse(Int, get(ENV, "UV_THREADPOOL_SIZE", "4"))
-const thread_notifiers = fill!(Vector{Option{Condition}}(max_ccall_threads), null)
+const thread_notifiers = fill!(Vector{Union{Some{Condition}, Null}}(max_ccall_threads), null)
 const threadcall_restrictor = Semaphore(max_ccall_threads)
 
 function notify_fun(idx)
     global thread_notifiers
-    notify(unwrap(thread_notifiers[idx]))
+    notify(get(thread_notifiers[idx]))
     return
 end
 
@@ -92,7 +92,7 @@ function do_threadcall(wrapper::Function, rettype::Type, argtypes::Vector, argva
         fun_ptr, args_arr, ret_arr, c_notify_fun, idx)
 
     # wait for a result & return it
-    wait(unwrap(thread_notifiers[idx]))
+    wait(get(thread_notifiers[idx]))
     thread_notifiers[idx] = null
     release(threadcall_restrictor)
 

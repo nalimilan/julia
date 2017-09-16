@@ -322,13 +322,13 @@ function pin(pkg::AbstractString, head::AbstractString)
                 end
 
                 # checkout selected branch
-                with(LibGit2.peel(LibGit2.GitTree, unwrap(ref))) do btree
+                with(LibGit2.peel(LibGit2.GitTree, get(ref))) do btree
                     LibGit2.checkout_tree(repo, btree)
                 end
                 # switch head to the branch
-                LibGit2.head!(repo, unwrap(ref))
+                LibGit2.head!(repo, get(ref))
             finally
-                close(unwrap(ref))
+                close(get(ref))
             end
         finally
             close(commit)

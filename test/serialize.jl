@@ -343,7 +343,7 @@ create_serialization_stream() do s
     serialize(s, null)
     seekstart(s)
     n = deserialize(s)
-    @test isa(n, Option)
+    @test isa(n, Union{Some, Null})
     @test !isdefined(n, :value)
 end
 

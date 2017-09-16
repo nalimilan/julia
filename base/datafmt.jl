@@ -406,12 +406,12 @@ end
 
 function colval(sbuff::String, startpos::Int, endpos::Int, cells::Array{Bool,2}, row::Int, col::Int)
     n = tryparse_internal(Bool, sbuff, startpos, endpos, 0, false)
-    isnull(n) || (cells[row, col] = unwrap(n))
+    isnull(n) || (cells[row, col] = get(n))
     isnull(n)
 end
 function colval(sbuff::String, startpos::Int, endpos::Int, cells::Array{T,2}, row::Int, col::Int) where T<:Integer
     n = tryparse_internal(T, sbuff, startpos, endpos, 0, false)
-    isnull(n) || (cells[row, col] = unwrap(n))
+    isnull(n) || (cells[row, col] = get(n))
     isnull(n)
 end
 function colval(sbuff::String, startpos::Int, endpos::Int, cells::Array{Float64,2}, row::Int, col::Int)
@@ -436,11 +436,11 @@ function colval(sbuff::String, startpos::Int, endpos::Int, cells::Array{Any,2}, 
     if len > 0
         # check Inteter
         ni64 = tryparse_internal(Int, sbuff, startpos, endpos, 0, false)
-        isnull(ni64) || (cells[row, col] = unwrap(ni64); return false)
+        isnull(ni64) || (cells[row, col] = get(ni64); return false)
 
         # check Bool
         nb = tryparse_internal(Bool, sbuff, startpos, endpos, 0, false)
-        isnull(nb) || (cells[row, col] = unwrap(nb); return false)
+        isnull(nb) || (cells[row, col] = get(nb); return false)
 
         # check float64
         valf64, hasvalue = ccall(:jl_try_substrtod, Tuple{Float64, Bool},

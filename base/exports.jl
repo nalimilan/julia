@@ -82,7 +82,6 @@ export
     Null,
     NTuple,
     ObjectIdDict,
-    Option,
     OrdinalRange,
     Pair,
     PartialQuickSort,
@@ -1192,7 +1191,6 @@ export
 # Null and Some types
     isnull,
     null,
-    unwrap,
 
 # Macros
     # parser internal

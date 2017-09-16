@@ -142,7 +142,7 @@ linenumber, source code, and fielddocs.
 """
 mutable struct DocStr
     text   :: Core.SimpleVector
-    object :: Option
+    object :: Union{Some{Any}, Null}
     data   :: Dict{Symbol, Any}
 end
 
@@ -190,7 +190,7 @@ function parsedoc(d::DocStr)
         md.meta[:path]   = d.data[:path]
         d.object = Some(md)
     end
-    unwrap(d.object)
+    get(d.object)
 end
 
 """

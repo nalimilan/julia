@@ -16,10 +16,10 @@ mutable struct Future <: AbstractRemoteRef
     where::Int
     whence::Int
     id::Int
-    v::Option{Any}
+    v::Union{Some{Any}, Null}
 
     Future(w::Int, rrid::RRID) = Future(w, rrid, null)
-    Future(w::Int, rrid::RRID, v::Option{Any}) =
+    Future(w::Int, rrid::RRID, v::Union{Some{Any}, Null}) =
         (r = new(w,rrid.whence,rrid.id,v); return test_existing_ref(r))
 
     Future(t::Tuple) = new(t[1],t[2],t[3],t[4])  # Useful for creating dummy, zeroed-out instances
@@ -475,7 +475,7 @@ wait(r::Future) = (!isnull(r.v) && return r; call_on_owner(wait_ref, r, myid());
 wait(r::RemoteChannel, args...) = (call_on_owner(wait_ref, r, myid(), args...); r)
 
 function fetch(r::Future)
-    !isnull(r.v) && return unwrap(r.v)
+    !isnull(r.v) && return get(r.v)
     v = call_on_owner(fetch_ref, r)
     r.v = Some(v)
     send_del_client(r)

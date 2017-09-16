@@ -424,7 +424,7 @@ const log_error_to = Dict{Tuple{Union{Module,Void},Union{Symbol,Void}},IO}()
 
 function _redirect(io::IO, log_to::Dict, sf::StackTraces.StackFrame)
     isnull(sf.linfo) && return io
-    mod = unwrap(sf.linfo).def
+    mod = get(sf.linfo).def
     isa(mod, Method) && (mod = mod.module)
     fun = sf.func
     if haskey(log_to, (mod,fun))
@@ -450,7 +450,7 @@ function _redirect(io::IO, log_to::Dict, fun::Symbol)
             isnull(frame.linfo) && continue
             sf = frame
             break_next_frame && (@goto skip)
-            mod = unwrap(frame.linfo).def
+            mod = get(frame.linfo).def
             isa(mod, Method) && (mod = mod.module)
             mod === Base || continue
             sff = string(frame.func)
@@ -673,7 +673,7 @@ getpass(prompt::AbstractString) = unsafe_string(ccall(:getpass, Cstring, (Cstrin
 end
 
 """
-    prompt(message; default="", password=false) -> Option{String}
+    prompt(message; default="", password=false) -> Union{Some{String}, Null}
 
 Displays the `message` then waits for user input. Input is terminated when a newline (\\n)
 is encountered or EOF (^D) character is entered on a blank line. If a `default` is provided

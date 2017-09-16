@@ -235,15 +235,15 @@ function head!(repo::GitRepo, ref::GitReference)
 end
 
 """
-    lookup_branch(repo::GitRepo, branch_name::AbstractString, remote::Bool=false) -> Option{GitReference}
+    lookup_branch(repo::GitRepo, branch_name::AbstractString, remote::Bool=false) -> Union{Some{GitReference}, Null}
 
 Determine if the branch specified by `branch_name` exists in the repository `repo`.
 If `remote` is `true`, `repo` is assumed to be a remote git repository. Otherwise, it
 is part of the local filesystem.
 
-`lookup_branch` returns an [`Option`](@ref), which will be [`null`](@ref) if the requested branch
-does not exist yet. If the branch does exist, the `Option` contains a `GitReference` to
-the branch.
+`lookup_branch` returns either a [`Some`](@ref) object, or [`null`](@ref) if
+the requested branch does not exist yet. If the branch does exist, the `Some` wrapper
+contains a `GitReference` to the branch.
 """
 function lookup_branch(repo::GitRepo,
                        branch_name::AbstractString,
@@ -266,12 +266,13 @@ function lookup_branch(repo::GitRepo,
 end
 
 """
-    upstream(ref::GitReference) -> Option{GitReference}
+    upstream(ref::GitReference) -> Union{Some{GitReference}, Null}
 
 Determine if the branch containing `ref` has a specified upstream branch.
 
-`upstream` returns an [`Option`](@ref), which will be [`null`](@ref) if the requested branch
-does not have an upstream counterpart. If the upstream branch does exist, the `Option`
+`upstream` returns either a [`Some`](@ref) object, or [`null`](@ref) if
+the requested branch does not have an upstream counterpart. If
+the upstream branch does exist, the `Some` wrapper
 contains a `GitReference` to the upstream branch.
 """
 function upstream(ref::GitReference)

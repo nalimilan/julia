@@ -19,7 +19,7 @@ the argument out in the method definition.
 
 Returns a tuple of 2 elements `(res, idx)`, where:
 
-* `res` is an `Option{T}` - the result of the parsing, `null` if parsing failed.
+* `res` is an `Union{Some{T}, Null}` - the result of the parsing, `null` if parsing failed.
 * `idx` is an `Int` - if parsing failed, the index at which it failed; if
    parsing succeeded, `idx` is the index _after_ the index at which parsing ended.
 """
@@ -99,7 +99,7 @@ end
 for (tok, fn) in zip("uUeE", [monthabbr_to_value, monthname_to_value, dayabbr_to_value, dayname_to_value])
     @eval @inline function tryparsenext(d::DatePart{$tok}, str, i, len, locale)
         word, i = tryparsenext_word(str, i, len, locale, max_width(d))
-        val = isnull(word) ? 0 : $fn(unwrap(word), locale)
+        val = isnull(word) ? 0 : $fn(get(word), locale)
         if val == 0
             return null, i
         else
@@ -114,7 +114,7 @@ struct Decimal3 end
 @inline function tryparsenext(d::DatePart{'s'}, str, i, len)
     ms, ii = tryparsenext_base10(str, i, len, min_width(d), max_width(d))
     if !isnull(ms)
-        val0 = val = unwrap(ms)
+        val0 = val = get(ms)
         len = ii - i
         if len > 3
             val, r = divrem(val, Int64(10) ^ (len - 3))
