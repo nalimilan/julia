@@ -2033,7 +2033,6 @@ function hash(a::AbstractArray{T}, h::UInt) where T
     # to RangeStepRegular values (e.g. 1.0:3.0 == 1:3)
     if isa(a, AbstractVector) && (!isleaftype(T) || method_exists(-, Tuple{T, T}))
         firstval = x2
-        lastval = last(a)
         x2, state = next(a, state)
         second = x2
         if length(a) == 2
@@ -2042,50 +2041,35 @@ function hash(a::AbstractArray{T}, h::UInt) where T
         end
         secondstate = state
 
+        # Only types supporting subtraction can be used with ranges
+        applicable(-, x2, firstval) || @goto nonrange
+
         # Try to compute the step between two subsequent elements.
-        # If this fails (e.g. type does not support subtraction, or overflow error
-        # for a checked arithmetic type), a cannot be equal to a range.
-        # promote() ensures no overflow can happen for heterogeneous arrays
-        # which are equal to a range
+        # If this fails due to overflow error (for a checked arithmetic type),
+        # a cannot be equal to a range.
+        if !isleaftype(T)
+            # promote_wider() ensures no overflow can happen.
+            # Overflow is only a problem if entries are of different types,
+            # since in that case the array could be equal to a range even in case of overflow.
+            # If overflow happens with entries of the same type, a cannot be equal to a range
+            # with more than two elements because more values cannot be represented.
+            firstval, x2 = promote_wider(firstval, x2)
+        end
         local step
-        firstp, lastp = promote(firstval, lastval)
         try
-            step = x2p - firstp
+            step = x2 - firstval
         catch err
-            isa(err, OverflowError) || isa(err, MethodError) || rethrow(err)
+            isa(err, OverflowError) || rethrow(err)
             @goto nonrange
         end
         iszero(step) && @goto nonrange
-        r = first:step:last(a)
-        @show r
+        r = firstval:step:last(a)
         state = start(a)
         rstate = start(r)
         while !done(a, state) && !done(r, rstate)
             x2, state = next(a, state)
             y, rstate = next(r, rstate)
-            # When encountering an element with a wider type than previous ones, restart
-            # from first element using the widest type to avoid overflow
-            U = promote_type(typeof(x2), S)
-            if U !== S
-                first = convert(U, first)
-                state = secondstate
-                x2 = second
-                @goto first
-            end
-            @show x2, y
             isequal(x2, y) || break
-        end
-        # If overflow happened when computing step, loop can have failed to detect
-        # that next element was in a range if type changes
-        if !done(a, state)
-            x2, _ = next(a, state)
-            U = promote_type(typeof(x2), S)
-            if U !== S
-                first = convert(U, first)
-                state = secondstate
-                x2 = second
-                @goto first
-            end
         end
         # If at least one element in addition to the first one matched range,
         # hash these elements as a range; else, leave them to the fallback below
@@ -2094,7 +2078,6 @@ function hash(a::AbstractArray{T}, h::UInt) where T
             h += hashr_seed
             h = hash(step, h)
             h = hash(x2, h)
-            @show first, step, x2
         end
     end
 
